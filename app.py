@@ -21,6 +21,14 @@ with col2:
 st.session_state.user_id = st.session_state.get("user_id", uuid.uuid4().hex)
 user_id = st.session_state.user_id
 
+def clear_memory():
+    response = requests.post(f"{API_URL}/clear_memory", json={"user_id": user_id})
+    if response.status_code == 200:
+        st.session_state.messages = []
+        st.success("Hafıza temizlendi!")
+    else:
+        st.error("Hafıza temizlenirken hata oluştu.")
+
 # LLM seçeneklerini API'den çek
 response = requests.get(f"{API_URL}/get_llms")
 if response.status_code == 200:
@@ -39,10 +47,7 @@ if "show_model_select" not in st.session_state:
 if "selected_llm" not in st.session_state:
     st.session_state.selected_llm = LLM_OPTIONS[0]  # Varsayılan model
 
-if st.button("Model Değiştir", use_container_width=True):
-    st.session_state.show_model_select = not st.session_state.show_model_select  # Aç/Kapa mantığı
-
-if st.session_state.show_model_select:
+def change_model():
     new_selected_llm = st.selectbox("", LLM_OPTIONS, index=LLM_OPTIONS.index(st.session_state.selected_llm))
 
     # Eğer model değiştiyse API'ye istekte bulun
@@ -53,6 +58,24 @@ if st.session_state.show_model_select:
             st.success(f"Modeli değiştirildi: {new_selected_llm}")
         else:
             st.error("Model değiştirilemedi!")
+
+# Butonları yan yana hizalamak için st.columns kullanın
+col1, col2 = st.columns([0.5, 0.5])
+
+with col1:
+    if st.button("Model Değiştir", use_container_width=True):
+        st.session_state.show_model_select = not st.session_state.show_model_select  # Aç/Kapa mantığı
+
+with col2:
+    if st.button("Hafızayı Temizle", use_container_width=True):
+        clear_memory()
+
+# Eğer model değiştirme paneli görünüyorsa, model seçimini yap
+if st.session_state.show_model_select:
+    col1, col2 = st.columns([0.5, 0.5])  # Logo küçük, başlık büyük
+
+    with col1:
+        change_model()
 
 # Stil ayarları
 st.markdown(
@@ -86,14 +109,6 @@ def chat_with_bot(user_input):
         return response.json().get("response", "Hata oluştu.")
     return "Sunucu hatası. Lütfen tekrar deneyin."
 
-def clear_memory():
-    response = requests.post(f"{API_URL}/clear_memory", json={"user_id": user_id})
-    if response.status_code == 200:
-        st.session_state.messages = []
-        st.success("Hafıza temizlendi!")
-    else:
-        st.error("Hafıza temizlenirken hata oluştu.")
-
 # Sohbet geçmişini göster
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -111,7 +126,3 @@ if prompt := st.chat_input("Mesajınızı girin"):
     with st.chat_message("assistant"):
         st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
-
-# Hafıza temizleme butonu
-if st.button("Hafızayı Temizle"):
-    clear_memory()

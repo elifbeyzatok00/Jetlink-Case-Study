@@ -110,23 +110,7 @@ def chat():
     with torch.no_grad():
         output = model.generate(**inputs, max_length=3000)
     response = tokenizer.decode(output[0], skip_special_tokens=True)
-    
-    # def edit_response(response):
-    #     """_summary_
-    #     Remove the "User:" and "Bot:" prefixes and unwanted text sections from the response. 
-    #     """
-    #     # Find the first "Bot:" index and the second "User:" index
-    #     bot_start_index = response.find("Bot:") + len("Bot:")  # start index for the Bot response
-    #     user_second_start_index = response.find("User:", bot_start_index)  # find the second "User:"
 
-    #     # If no second "User:" is found, take until the end of the response
-    #     response_end_index = user_second_start_index if user_second_start_index != -1 else len(response)
-
-    #     # Extract the section of the response after the first "Bot:" and before the second "User:"
-    #     final_response = response[bot_start_index:response_end_index].strip()
-    #     return final_response
-    
-    # response = edit_response(response)
     
     # Update memory
     session_memory.append(message)
