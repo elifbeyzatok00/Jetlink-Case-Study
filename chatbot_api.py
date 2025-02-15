@@ -40,9 +40,20 @@ index = pc.Index(index_name)
 # Log in using your Hugging Face token
 login(token=os.getenv("HUGGING_FACE_TOKEN"))
 
-# Load LLM model
-tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
-model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.2-1B-Instruct")
+# Available LLM models
+LLM_MODELS = {
+    "LLAMA_3_2_1B_INSTURCT": "meta-llama/Llama-3.2-1B-Instruct",
+    "LLAMA_3_2_3B_INSTURCT": "meta-llama/Llama-3.2-3B-Instruct"
+}
+
+def load_llm(model_name):
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name)
+    return tokenizer, model
+
+# Default LLM
+current_model = os.getenv("DEFAULT_LLM", "LLAMA_3_2_1B_INSTURCT")
+tokenizer, model = load_llm(LLM_MODELS[current_model])
 
 # Load Embedding Model
 embedding_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L12-v2")
@@ -97,7 +108,7 @@ def chat():
     # Generate response
     inputs = tokenizer(context + "\nUser: " + message + "\nBot:", return_tensors="pt")
     with torch.no_grad():
-        output = model.generate(**inputs, max_length=2000)
+        output = model.generate(**inputs, max_length=3000)
     response = tokenizer.decode(output[0], skip_special_tokens=True)
     
     # def edit_response(response):
@@ -132,7 +143,20 @@ def clear_memory():
     session.pop("history", None)
     return jsonify({"message": "Memory cleared successfully"})
 
+@app.route("/get_llms", methods=["GET"])
+def get_llms():
+    """Mevcut LLM modellerini döndürür."""
+    return jsonify({"models": list(LLM_MODELS.keys())})
 
+@app.route("/set_llm", methods=["POST"])
+def set_llm():
+    global tokenizer, model
+    data = request.json
+    selected_model = data.get("model")
+    if selected_model in LLM_MODELS:
+        tokenizer, model = load_llm(LLM_MODELS[selected_model])
+        return jsonify({"message": f"LLM changed to {selected_model}"})
+    return jsonify({"error": "Invalid model selection"}), 400
 
 if __name__ == "__main__":
     app.run(debug=True)

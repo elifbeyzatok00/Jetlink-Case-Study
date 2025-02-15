@@ -1,14 +1,74 @@
+import uuid
 import streamlit as st
 import requests
-import time
 
 API_URL = "http://127.0.0.1:5000"  # Flask API'nin çalıştığı adres
 
 st.set_page_config(page_title="Jetlink", layout="centered")
-st.title("Jetbot")
 
-# Kullanıcı ID
-user_id = st.text_input("Kullanıcı ID", "anonymous")
+# HTML ve CSS yerine Streamlit bileşenlerini kullanarak yan yana hizalama
+col1, col2 = st.columns([0.1, 0.9])  # Logo küçük, başlık büyük
+
+with col1:
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)  # Resmi aşağı kaydır
+    st.image("assets/jetbot_logo.png", width=150)  # Logonun boyutunu isteğe göre ayarlayın
+
+with col2:
+    st.markdown("<h1 style='color: #333333; margin: 0;'>Jetbot</h1>", unsafe_allow_html=True)
+
+
+# Kullanıcı kimliği oluştur
+st.session_state.user_id = uuid.uuid4().hex
+user_id = st.session_state.user_id
+
+# LLM seçeneklerini API'den çek
+response = requests.get(f"{API_URL}/get_llms")
+if response.status_code == 200:
+    LLM_OPTIONS = response.json().get("models", [])
+else:
+    LLM_OPTIONS = []
+
+# Eğer API başarısız olursa varsayılan model listesi
+if not LLM_OPTIONS:
+    LLM_OPTIONS = ["LLAMA_3_2_1B_INSTURCT", "LLAMA_3_2_3B_INSTURCT"]
+
+# Model seçimi ve butonu tek bir satıra yerleştir
+col1, col2 = st.columns([0.3, 0.2])
+
+with col1:
+    selected_llm = st.selectbox("Model Seç", LLM_OPTIONS, index=0)
+
+with col2:
+    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)  # Butonu aşağı kaydır
+    if st.button("Model Değiştir", use_container_width=True):
+        response = requests.post(f"{API_URL}/set_llm", json={"model": selected_llm})
+        if response.status_code == 200:
+            st.success(f"LLM modeli değiştirildi: {selected_llm}")
+        else:
+            st.error("Model değiştirilemedi!")
+
+# Stil ayarları
+st.markdown(
+    """
+    <style>
+    div.stButton > button {
+        background-color: #F2189B;
+        color: white;
+        border-radius: 5px;
+        padding: 8px;
+        font-size: 16px;
+        transition: 0.3s;
+        border: none;
+    }
+    div.stButton > button:hover {
+        background-color: #B32279;
+        color: white;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # Sohbet geçmişini saklamak için
 if "messages" not in st.session_state:
