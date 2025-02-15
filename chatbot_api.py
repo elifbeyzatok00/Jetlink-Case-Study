@@ -1,11 +1,12 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, Response
 from flask_pymongo import PyMongo
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel, BitsAndBytesConfig
 from pinecone import Pinecone, ServerlessSpec
 import os
 from dotenv import load_dotenv
 from huggingface_hub import login
+import torch
 
 # Load environment variables
 load_dotenv()
@@ -46,14 +47,28 @@ LLM_MODELS = {
     "LLAMA_3_2_3B_INSTURCT": "meta-llama/Llama-3.2-3B-Instruct"
 }
 
+quantization_config = BitsAndBytesConfig(
+    load_in_4bit=True,  # 4-bit quantization
+    bnb_4bit_compute_dtype=torch.float16,  # Düşük hassasiyetli hesaplama
+    bnb_4bit_use_double_quant=True  # Çift quantization ile hız artışı
+)
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
 def load_llm(model_name):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=quantization_config).to(device)
     return tokenizer, model
 
 # Default LLM
 current_model = os.getenv("DEFAULT_LLM", "LLAMA_3_2_1B_INSTURCT")
 tokenizer, model = load_llm(LLM_MODELS[current_model])
+
+if torch.cuda.is_available():
+    print("CUDA is available")
+    print(torch.cuda.get_device_name(0))
+else:
+    print("CUDA is not available")
 
 # Load Embedding Model
 embedding_model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L12-v2")
@@ -78,11 +93,20 @@ def store_long_term_memory(user_id, message, response):
     # MongoDB'ye ekleme yap
     mongo.db.memory.insert_one({"user_id": user_id, "message": message, "response": response})
 
-# Helper function for vector search
+# Search vector memory
 def search_memory(query):
     vector = get_embedding(query)
     results = index.query(vector=vector, top_k=3, include_metadata=True)
     return results
+
+# Edit response function to clean up the response
+def edit_response(response):
+    """Remove the 'User:' and 'Bot:' prefixes and unwanted text sections."""
+    bot_start_index = response.find("Bot:") + len("Bot:")  # start index for the Bot response
+    user_second_start_index = response.find("User:", bot_start_index)  # find the second "User:"
+    response_end_index = user_second_start_index if user_second_start_index != -1 else len(response)
+    final_response = response[bot_start_index:response_end_index].strip()
+    return final_response
 
 @app.route("/")
 def home():
@@ -106,13 +130,19 @@ def chat():
     context += "\n".join(session_memory)
 
     # Generate response
-    inputs = tokenizer(context + "\nUser: " + message + "\nBot:", return_tensors="pt")
-    with torch.no_grad():
-        output = model.generate(**inputs, max_length=3000)
-    response = tokenizer.decode(output[0], skip_special_tokens=True)
-
+    inputs = tokenizer(context + "\nUser: " + message + "\nBot:", return_tensors="pt").to(device)
+    
+    
+    # Streaming generator function
+    def generate_response_stream():
+        with torch.no_grad():
+            output = model.generate(**inputs, max_new_tokens=1024, temperature=0.7, top_p=0.9, do_sample=True)
+            response = tokenizer.decode(output[0], skip_special_tokens=True)
+            cleaned_response = edit_response(response)  # Clean the response using the edit_response function
+            yield cleaned_response
     
     # Update memory
+    response = next(generate_response_stream())
     session_memory.append(message)
     session_memory.append(response)
     session["history"] = session_memory[-10:]  # Keep last 10 messages
@@ -139,7 +169,7 @@ def set_llm():
     selected_model = data.get("model")
     if selected_model in LLM_MODELS:
         tokenizer, model = load_llm(LLM_MODELS[selected_model])
-        return jsonify({"message": f"LLM changed to {selected_model}"})
+        return jsonify({"message": f"LLM changed to {selected_model}"}), 200
     return jsonify({"error": "Invalid model selection"}), 400
 
 if __name__ == "__main__":

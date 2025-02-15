@@ -48,7 +48,7 @@ if "selected_llm" not in st.session_state:
     st.session_state.selected_llm = LLM_OPTIONS[0]  # Varsayılan model
 
 def change_model():
-    new_selected_llm = st.selectbox("", LLM_OPTIONS, index=LLM_OPTIONS.index(st.session_state.selected_llm))
+    new_selected_llm = st.selectbox("Model seçin", LLM_OPTIONS, index=LLM_OPTIONS.index(st.session_state.selected_llm))
 
     # Eğer model değiştiyse API'ye istekte bulun
     if new_selected_llm != st.session_state.selected_llm:
@@ -63,7 +63,7 @@ def change_model():
 col1, col2 = st.columns([0.5, 0.5])
 
 with col1:
-    if st.button("Model Değiştir", use_container_width=True):
+    if st.button("Model Değiştir 🗘", use_container_width=True):
         st.session_state.show_model_select = not st.session_state.show_model_select  # Aç/Kapa mantığı
 
 with col2:
@@ -116,13 +116,15 @@ for message in st.session_state.messages:
 
 # Kullanıcıdan mesaj al
 if prompt := st.chat_input("Mesajınızı girin"): 
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="👤"):
         st.markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     # API'ye mesajı gönder ve yanıtı al
     response = chat_with_bot(prompt)
     
-    with st.chat_message("assistant"):
+    # Assistant için avatar olarak resim kullan
+    assistant_img = "assets/jetbot_logo.png"
+    with st.chat_message("assistant", avatar=assistant_img):
         st.markdown(response)
     st.session_state.messages.append({"role": "assistant", "content": response})
