@@ -17,9 +17,11 @@ with col2:
     st.markdown("<h1 style='color: #333333; margin: 0;'>Jetbot</h1>", unsafe_allow_html=True)
 
 
-# Kullanıcı kimliği oluştur
-st.session_state.user_id = st.session_state.get("user_id", uuid.uuid4().hex)
-user_id = st.session_state.user_id
+# Streamlit session ID oluştur
+if "user_id" not in st.session_state:
+    st.session_state["user_id"] = uuid.uuid4().hex
+
+user_id = st.session_state["user_id"]
 
 def clear_memory():
     response = requests.post(f"{API_URL}/clear_memory", json={"user_id": user_id})

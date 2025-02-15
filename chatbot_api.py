@@ -87,7 +87,7 @@ def store_long_term_memory(user_id, message, response):
 
     # Pinecone'a ekleme yap
     index.upsert(vectors=[
-        {"id": str(user_id) + "_" + str(hash(message)), "values": vector, "metadata": {"message": message, "response": response}}
+        {"id": str(hash(message)), "values": vector, "metadata": {"message": message, "response": response, "user_id": user_id}}
     ])
     
     # MongoDB'ye ekleme yap
@@ -153,7 +153,10 @@ def chat():
 @app.route("/clear_memory", methods=["POST"])
 def clear_memory():
     user_id = request.json.get("user_id", "anonymous")
+    # MongoDB temizle
     mongo.db.memory.delete_many({"user_id": user_id})
+        
+    # Session temizle 
     session.pop("history", None)
     return jsonify({"message": "Memory cleared successfully"})
 
