@@ -18,7 +18,7 @@ with col2:
 
 
 # Kullanıcı kimliği oluştur
-st.session_state.user_id = uuid.uuid4().hex
+st.session_state.user_id = st.session_state.get("user_id", uuid.uuid4().hex)
 user_id = st.session_state.user_id
 
 # LLM seçeneklerini API'den çek
@@ -31,19 +31,26 @@ else:
 # Eğer API başarısız olursa varsayılan model listesi
 if not LLM_OPTIONS:
     LLM_OPTIONS = ["LLAMA_3_2_1B_INSTURCT", "LLAMA_3_2_3B_INSTURCT"]
+    
+# Model seçimini gizlemek için session state kullan
+if "show_model_select" not in st.session_state:
+    st.session_state.show_model_select = False
 
-# Model seçimi ve butonu tek bir satıra yerleştir
-col1, col2 = st.columns([0.3, 0.2])
+if "selected_llm" not in st.session_state:
+    st.session_state.selected_llm = LLM_OPTIONS[0]  # Varsayılan model
 
-with col1:
-    selected_llm = st.selectbox("Model Seç", LLM_OPTIONS, index=0)
+if st.button("Model Değiştir", use_container_width=True):
+    st.session_state.show_model_select = not st.session_state.show_model_select  # Aç/Kapa mantığı
 
-with col2:
-    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)  # Butonu aşağı kaydır
-    if st.button("Model Değiştir", use_container_width=True):
-        response = requests.post(f"{API_URL}/set_llm", json={"model": selected_llm})
+if st.session_state.show_model_select:
+    new_selected_llm = st.selectbox("", LLM_OPTIONS, index=LLM_OPTIONS.index(st.session_state.selected_llm))
+
+    # Eğer model değiştiyse API'ye istekte bulun
+    if new_selected_llm != st.session_state.selected_llm:
+        st.session_state.selected_llm = new_selected_llm  # Yeni modeli güncelle
+        response = requests.post(f"{API_URL}/set_llm", json={"model": new_selected_llm})
         if response.status_code == 200:
-            st.success(f"LLM modeli değiştirildi: {selected_llm}")
+            st.success(f"Modeli değiştirildi: {new_selected_llm}")
         else:
             st.error("Model değiştirilemedi!")
 
@@ -68,7 +75,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
 
 # Sohbet geçmişini saklamak için
 if "messages" not in st.session_state:
