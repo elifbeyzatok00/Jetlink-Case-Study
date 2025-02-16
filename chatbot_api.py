@@ -156,6 +156,15 @@ def clear_memory():
     # MongoDB temizle
     mongo.db.memory.delete_many({"user_id": user_id})
     
+    # Fetch all vector IDs associated with the user from Pinecone
+    results = index.query(vector=get_embedding("dummy"), top_k=1000, include_metadata=True)  # Fetch many results
+
+    # Extract and delete only vectors belonging to the user
+    user_vector_ids = [match["id"] for match in results["matches"] if match["metadata"].get("user_id") == user_id]
+    
+    if user_vector_ids:
+        index.delete(ids=user_vector_ids)
+    
     # Session temizle 
     session.pop("history", None)
     return jsonify({"message": "Memory cleared successfully"})
