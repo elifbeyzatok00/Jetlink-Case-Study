@@ -51,6 +51,9 @@ Jetlink-Case-Study/
 
 ![chat ui](assets/ui1.png)
 
+### 📺 [Jetbot short chat video](https://drive.google.com/file/d/18Yhssoyqgue-7pfMqffkXhOpcSpO33VM/view?usp=sharing)
+
+
 ### Backend (Flask-based API)
 
 - **Flask** handles user inputs and delivers bot responses via REST API endpoints.
