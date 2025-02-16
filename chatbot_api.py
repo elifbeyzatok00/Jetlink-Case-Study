@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session, Response
+from flask import Flask, request, jsonify, session
 from flask_pymongo import PyMongo
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel, BitsAndBytesConfig
@@ -49,8 +49,8 @@ LLM_MODELS = {
 
 quantization_config = BitsAndBytesConfig(
     load_in_4bit=True,  # 4-bit quantization
-    bnb_4bit_compute_dtype=torch.float16,  # Düşük hassasiyetli hesaplama
-    bnb_4bit_use_double_quant=True  # Çift quantization ile hız artışı
+    bnb_4bit_compute_dtype=torch.float16,  # Low precision calculation
+    bnb_4bit_use_double_quant=True  # Speed ​​increase with double quantization
 )
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -82,15 +82,15 @@ def get_embedding(text):
 
 # Helper function to store long-term memory
 def store_long_term_memory(user_id, message, response):
-        # Metni embedding vektörüne çevir
+    # Convert text to embedding vector
     vector = get_embedding(message)
 
-    # Pinecone'a ekleme yap
+    # Add to Pinecone
     index.upsert(vectors=[
         {"id": str(hash(message)), "values": vector, "metadata": {"message": message, "response": response, "user_id": user_id}}
     ])
     
-    # MongoDB'ye ekleme yap
+    # Insert into MongoDB
     mongo.db.memory.insert_one({"user_id": user_id, "message": message, "response": response})
 
 # Search vector memory
@@ -153,7 +153,7 @@ def chat():
 @app.route("/clear_memory", methods=["POST"])
 def clear_memory():
     user_id = request.json.get("user_id", "anonymous")
-    # MongoDB temizle
+    # clean MongoDB
     mongo.db.memory.delete_many({"user_id": user_id})
     
     # Fetch all vector IDs associated with the user from Pinecone
@@ -165,13 +165,13 @@ def clear_memory():
     if user_vector_ids:
         index.delete(ids=user_vector_ids)
     
-    # Session temizle 
+    # clear session 
     session.pop("history", None)
     return jsonify({"message": "Memory cleared successfully"})
 
 @app.route("/get_llms", methods=["GET"])
 def get_llms():
-    """Mevcut LLM modellerini döndürür."""
+    """Returns existing LLM models."""
     return jsonify({"models": list(LLM_MODELS.keys())})
 
 @app.route("/set_llm", methods=["POST"])
