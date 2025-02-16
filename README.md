@@ -55,7 +55,7 @@ Jetlink-Case-Study/
 
 - **Flask** handles user inputs and delivers bot responses via REST API endpoints.
 - **MongoDB** is used for long-term memory, storing persistent user interactions across sessions.
-- **Pinecone** is used for short-term memory within a session, leveraging vector embeddings for quick retrieval of relevant context. (Pinecone has been used for both short-term and long-term memory at some point.)
+- **Pinecone** is used for short-term memory within a session, leveraging vector embeddings for quick retrieval of relevant context.
 - **Hugging Face Models** are used for generating responses to user queries (e.g., LLAMA-3 models).
 - **Session-based Memory** is managed by Flask sessions for short-term interaction context.
 
