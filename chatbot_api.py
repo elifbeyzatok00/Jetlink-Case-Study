@@ -155,7 +155,7 @@ def clear_memory():
     user_id = request.json.get("user_id", "anonymous")
     # MongoDB temizle
     mongo.db.memory.delete_many({"user_id": user_id})
-        
+    
     # Session temizle 
     session.pop("history", None)
     return jsonify({"message": "Memory cleared successfully"})

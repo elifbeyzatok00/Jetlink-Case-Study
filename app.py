@@ -101,6 +101,9 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+user_avatar = "👤"
+bot_avatar = "assets/jetbot_logo.png"
+
 # Sohbet geçmişini saklamak için
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -113,20 +116,19 @@ def chat_with_bot(user_input):
 
 # Sohbet geçmişini göster
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
+    with st.chat_message(message["role"], avatar=message.get("avatar", user_avatar if message["role"] == "user" else bot_avatar)):
         st.markdown(message["content"])
 
 # Kullanıcıdan mesaj al
 if prompt := st.chat_input("Mesajınızı girin"): 
-    with st.chat_message("user", avatar="👤"):
+    with st.chat_message("user", avatar=user_avatar):
         st.markdown(prompt)
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.messages.append({"role": "user", "content": prompt, "avatar": user_avatar})
     
     # API'ye mesajı gönder ve yanıtı al
     response = chat_with_bot(prompt)
     
     # Assistant için avatar olarak resim kullan
-    assistant_img = "assets/jetbot_logo.png"
-    with st.chat_message("assistant", avatar=assistant_img):
+    with st.chat_message("assistant", avatar=bot_avatar):
         st.markdown(response)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    st.session_state.messages.append({"role": "assistant", "content": response, "avatar": bot_avatar})
