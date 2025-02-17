@@ -51,11 +51,13 @@ Jetlink-Case-Study/
 
 ![chat ui](assets/ui1.png)
 
+### 📺 [Jetbot short chat video](https://drive.google.com/file/d/18Yhssoyqgue-7pfMqffkXhOpcSpO33VM/view?usp=sharing)
+
 ### Backend (Flask-based API)
 
 - **Flask** handles user inputs and delivers bot responses via REST API endpoints.
 - **MongoDB** is used for long-term memory, storing persistent user interactions across sessions.
-- **Pinecone** is used for short-term memory within a session, leveraging vector embeddings for quick retrieval of relevant context. (Pinecone has been used for both short-term and long-term memory at some point.)
+- **Pinecone** is used for short-term memory within a session, leveraging vector embeddings for quick retrieval of relevant context.
 - **Hugging Face Models** are used for generating responses to user queries (e.g., LLAMA-3 models).
 - **Session-based Memory** is managed by Flask sessions for short-term interaction context.
 
@@ -98,15 +100,25 @@ Follow the steps below to set up the environment and install dependencies:
    MongoDB stores chat history and related data. Follow these instructions:
 
    - Install MongoDB: [MongoDB Installation Guide](https://www.mongodb.com/docs/manual/installation/).
-   - Start MongoDB:
-     - **Windows/macOS**: MongoDB should start automatically after installation. If not, use:
-       ```bash
-       mongod
+     - Start MongoDB:
+       - **Windows/macOS**: MongoDB should start automatically after installation. If not, use:
+         ```bash
+         mongod
+         ```
+       - **Linux**: Start MongoDB with:
+         ```bash
+         sudo systemctl start mongod
+         ```
+   - Install MongoDB Compass: [MongoDB Compass Download (GUI)](https://www.mongodb.com/try/download/compass).
+
+     - Open MongoDB Compass after installation.
+     - In the **"New Connection"** window, enter the following connection string:
+
        ```
-     - **Linux**: Start MongoDB with:
-       ```bash
-       sudo systemctl start mongod
+       mongodb://localhost:27017/
        ```
+
+     - Click **"Connect"** to establish a connection.
 
 5. **Set Up Pinecone Account:**
 
@@ -143,7 +155,7 @@ Follow the steps below to set up the environment and install dependencies:
 
 2. **Launch the Streamlit Interface:**
 
-   In another terminal, run the Streamlit app:
+   In another terminal, activate the virtual environment and run the Streamlit app:
 
    ```sh
    streamlit run app.py
