@@ -101,15 +101,23 @@ Follow the steps below to set up the environment and install dependencies:
    MongoDB stores chat history and related data. Follow these instructions:
 
    - Install MongoDB: [MongoDB Installation Guide](https://www.mongodb.com/docs/manual/installation/).
-   - Start MongoDB:
-     - **Windows/macOS**: MongoDB should start automatically after installation. If not, use:
-       ```bash
-       mongod
-       ```
-     - **Linux**: Start MongoDB with:
-       ```bash
-       sudo systemctl start mongod
-       ```
+      - Start MongoDB:
+        - **Windows/macOS**: MongoDB should start automatically after installation. If not, use:
+          ```bash
+          mongod
+          ```
+        - **Linux**: Start MongoDB with:
+          ```bash
+          sudo systemctl start mongod
+          ```
+   - Install MongoDB Compass: [MongoDB Compass Download (GUI)](https://www.mongodb.com/try/download/compass).
+      - Open MongoDB Compass after installation.
+      - In the **"New Connection"** window, enter the following connection string:
+   
+        ```
+        mongodb://localhost:27017/
+        ```
+      - Click **"Connect"** to establish a connection.
 
 5. **Set Up Pinecone Account:**
 
@@ -146,7 +154,7 @@ Follow the steps below to set up the environment and install dependencies:
 
 2. **Launch the Streamlit Interface:**
 
-   In another terminal, run the Streamlit app:
+   In another terminal, activate the virtual environment and run the Streamlit app:
 
    ```sh
    streamlit run app.py
